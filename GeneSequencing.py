@@ -67,11 +67,11 @@ class GeneSequencing:
             O(a) where a is the align_length in most cases
     '''
 
-    def generateBandedAlignment(self, horizontalSeq, verticalSeq, fromArray, align_length):
+    def generateBandedAlignment(self, horizontalSeq, verticalSeq, fromArray, align_length, retJ):
         horizontalAlignment = []
         verticalAlignment = []
         v = len(fromArray) - 1
-        h = len(fromArray[0]) - MAXINDELS - 1  # 7 in our case
+        h = retJ - 1  # 7 in our case
         while fromArray[v][h] != "START":
             adjustH = v + h - MAXINDELS
             if fromArray[v][h] == "LEFT":
@@ -157,6 +157,7 @@ class GeneSequencing:
         fromArray = [["NONE"]*(cols) for _ in range(rows)]
         cost[0][MAXINDELS] = 0
         fromArray[0][MAXINDELS] = "START"
+        retJ = 0
         for i in range(rows):
             for j in range(cols):
                 if i == 0 and j <= MAXINDELS:
@@ -164,6 +165,8 @@ class GeneSequencing:
                 adjustJ = j + i - MAXINDELS
                 if adjustJ > maxJ or adjustJ < 0:
                     continue
+                if i == rows - 1:
+                    retJ += 1
                 # print(jEnd, adjustJ, i, j, len(horizontalSeq))
                 if horizontalSeq[adjustJ - 1] == verticalSeq[i-1]:
                     diagonalCost = (
@@ -186,11 +189,10 @@ class GeneSequencing:
                 elif minCost == "diagonal":
                     cost[i][j] = diagonalCost
                     fromArray[i][j] = "DIAGONAL"
-        # alignment1, alignment2 = "", ""
         assert(cost[0][MAXINDELS] == 0)
         alignment1, alignment2 = self.generateBandedAlignment(
-            horizontalSeq, verticalSeq, fromArray, align_length)
-        return cost[rows-1][cols - MAXINDELS - 1], alignment1, alignment2
+            horizontalSeq, verticalSeq, fromArray, align_length, retJ)
+        return cost[rows-1][retJ - 1], alignment1, alignment2
     '''
         Generates the Alignment String
         n and m are the lengths of the strings
