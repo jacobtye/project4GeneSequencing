@@ -113,13 +113,15 @@ class GeneSequencing:
         cols = 2*MAXINDELS + 1
         cost = [[float('inf')]*(cols) for _ in range(rows)]
         fromArray = [["NONE"]*(cols) for _ in range(rows)]
-        cost[0][0] = 0
-        fromArray[0][0] = "START"
+        cost[0][MAXINDELS] = 0
+        fromArray[0][MAXINDELS] = "START"
         for i in range(rows):
             for j in range(cols):
-                if i != 0 or j != 0:
+                if i != 0 or j > MAXINDELS:
                     adjustJ = j + i - MAXINDELS
                     if adjustJ > len(horizontalSeq) or adjustJ < 0:
+                        continue
+                    if adjustJ > i + MAXINDELS or adjustJ < i - MAXINDELS:
                         continue
                     # print(jEnd, adjustJ, i, j, len(horizontalSeq))
                     if horizontalSeq[adjustJ - 1] == verticalSeq[i-1]:
@@ -146,10 +148,11 @@ class GeneSequencing:
         alignment1, alignment2 = "", ""
         if fromArray[-1][-1] == "NONE":
             return float('inf'), "No Alignment Possible", "No Alignment Possible"
-        assert(cost[0][0] == 0)
+        assert(cost[0][MAXINDELS] == 0)
         # alignment1, alignment2 = self.generateBandedAlignment(
         #     horizontalSeq, verticalSeq, fromArray, align_length)
-        return cost[rows-1][cols - 1], alignment1, alignment2
+        print(cost[rows - 1])
+        return cost[rows-1][cols - MAXINDELS - 1], alignment1, alignment2
 
     def unrestrictedAlignment(self, horizontalSeq, verticalSeq, align_length):
         cols = min((align_length + 1), len(horizontalSeq) + 1)
