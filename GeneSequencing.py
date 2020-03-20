@@ -40,44 +40,25 @@ class GeneSequencing:
         horizontalAlignment = []
         verticalAlignment = []
         v = len(fromArray) - 1
-        h = len(fromArray[0]) - 1
+        h = len(fromArray[0]) - MAXINDELS - 1
         while fromArray[v][h] != "START":
-            if v > MAXINDELS:
-                adjustH = v + h - MAXINDELS
-                if fromArray[v][h] == "LEFT":
-                    verticalAlignment.append("-")
-                    horizontalAlignment.append(horizontalSeq[adjustH-1])
-                    h -= 1
-                elif fromArray[v][h] == "ABOVE":
-                    verticalAlignment.append(verticalSeq[v-1])
-                    horizontalAlignment.append("-")
-                    v -= 1
-                    h += 1
-                elif fromArray[v][h] == "DIAGONAL":
-                    verticalAlignment.append(verticalSeq[v-1])
-                    v -= 1
-                    horizontalAlignment.append(horizontalSeq[adjustH])
-                else:
-                    print(fromArray[v][h])
-                    raise ValueError("UNKNOWN VALUE")
+            adjustH = v + h - MAXINDELS
+            if fromArray[v][h] == "LEFT":
+                verticalAlignment.append("-")
+                horizontalAlignment.append(horizontalSeq[adjustH-1])
+                h -= 1
+            elif fromArray[v][h] == "ABOVE":
+                verticalAlignment.append(verticalSeq[v-1])
+                horizontalAlignment.append("-")
+                v -= 1
+                h += 1
+            elif fromArray[v][h] == "DIAGONAL":
+                verticalAlignment.append(verticalSeq[v-1])
+                v -= 1
+                horizontalAlignment.append(horizontalSeq[adjustH - 1])
             else:
-                if fromArray[v][h] == "LEFT":
-                    verticalAlignment.append("-")
-                    horizontalAlignment.append(horizontalSeq[h-1])
-                    h -= 1
-                elif fromArray[v][h] == "ABOVE":
-                    verticalAlignment.append(verticalSeq[v-1])
-                    horizontalAlignment.append("-")
-                    v -= 1
-                elif fromArray[v][h] == "DIAGONAL":
-                    verticalAlignment.append(verticalSeq[v-1])
-                    v -= 1
-                    horizontalAlignment.append(horizontalSeq[h-1])
-                    h -= 1
-                else:
-                    print(fromArray[v][h])
-                    raise ValueError("UNKNOWN VALUE")
-        return "".join(horizontalAlignment[::-1]), "".join(verticalAlignment[::-1])
+                print(fromArray[v][h])
+                raise ValueError("UNKNOWN VALUE")
         return "".join(horizontalAlignment[::-1]), "".join(verticalAlignment[::-1])
 
     def generateAlignment(self, horizontalSeq, verticalSeq, fromArray, align_length):
@@ -105,9 +86,9 @@ class GeneSequencing:
         return "".join(horizontalAlignment[::-1]), "".join(verticalAlignment[::-1])
 
     def bandedAlignment(self, horizontalSeq, verticalSeq, align_length):
+        maxJ = min(align_length, len(horizontalSeq))
         cols = min((align_length + 1), len(horizontalSeq) + 1)
         rows = min((align_length + 1), len(verticalSeq) + 1)
-
         if cols - rows > MAXINDELS:
             return float('inf'), "No Alignment Possible", "No Alignment Possible"
         cols = 2*MAXINDELS + 1
@@ -117,41 +98,37 @@ class GeneSequencing:
         fromArray[0][MAXINDELS] = "START"
         for i in range(rows):
             for j in range(cols):
-                if i != 0 or j > MAXINDELS:
-                    adjustJ = j + i - MAXINDELS
-                    if adjustJ > len(horizontalSeq) or adjustJ < 0:
-                        continue
-                    if adjustJ > i + MAXINDELS or adjustJ < i - MAXINDELS:
-                        continue
-                    # print(jEnd, adjustJ, i, j, len(horizontalSeq))
-                    if horizontalSeq[adjustJ - 1] == verticalSeq[i-1]:
-                        diagonalCost = (
-                            cost[i - 1][j] + MATCH) if self.checkBoundaries(i - 1, j, rows, cols) else float('inf')
-                    else:
-                        diagonalCost = (
-                            cost[i-1][j] + SUB) if self.checkBoundaries(i-1, j, rows, cols) else float('inf')
-                    aboveCost = (
-                        cost[i-1][j + 1] + INDEL) if self.checkBoundaries(i-1, j + 1, rows, cols) else float('inf')
-                    leftCost = (
-                        cost[i][j - 1] + INDEL) if self.checkBoundaries(i, j - 1, rows, cols) else float('inf')
-                    minCost = self.findMin(
-                        leftCost, aboveCost, diagonalCost)
-                    if minCost == "left":
-                        cost[i][j] = leftCost
-                        fromArray[i][j] = "LEFT"
-                    elif minCost == "above":
-                        cost[i][j] = aboveCost
-                        fromArray[i][j] = "ABOVE"
-                    elif minCost == "diagonal":
-                        cost[i][j] = diagonalCost
-                        fromArray[i][j] = "DIAGONAL"
-        alignment1, alignment2 = "", ""
-        if fromArray[-1][-1] == "NONE":
-            return float('inf'), "No Alignment Possible", "No Alignment Possible"
+                if i == 0 and j <= MAXINDELS:
+                    continue
+                adjustJ = j + i - MAXINDELS
+                if adjustJ > maxJ or adjustJ < 0:
+                    continue
+                # print(jEnd, adjustJ, i, j, len(horizontalSeq))
+                if horizontalSeq[adjustJ - 1] == verticalSeq[i-1]:
+                    diagonalCost = (
+                        cost[i - 1][j] + MATCH) if self.checkBoundaries(i - 1, j, rows, cols) else float('inf')
+                else:
+                    diagonalCost = (
+                        cost[i-1][j] + SUB) if self.checkBoundaries(i-1, j, rows, cols) else float('inf')
+                aboveCost = (
+                    cost[i-1][j + 1] + INDEL) if self.checkBoundaries(i-1, j + 1, rows, cols) else float('inf')
+                leftCost = (
+                    cost[i][j - 1] + INDEL) if self.checkBoundaries(i, j - 1, rows, cols) else float('inf')
+                minCost = self.findMin(
+                    leftCost, aboveCost, diagonalCost)
+                if minCost == "left":
+                    cost[i][j] = leftCost
+                    fromArray[i][j] = "LEFT"
+                elif minCost == "above":
+                    cost[i][j] = aboveCost
+                    fromArray[i][j] = "ABOVE"
+                elif minCost == "diagonal":
+                    cost[i][j] = diagonalCost
+                    fromArray[i][j] = "DIAGONAL"
+        # alignment1, alignment2 = "", ""
         assert(cost[0][MAXINDELS] == 0)
-        # alignment1, alignment2 = self.generateBandedAlignment(
-        #     horizontalSeq, verticalSeq, fromArray, align_length)
-        print(cost[rows - 1])
+        alignment1, alignment2 = self.generateBandedAlignment(
+            horizontalSeq, verticalSeq, fromArray, align_length)
         return cost[rows-1][cols - MAXINDELS - 1], alignment1, alignment2
 
     def unrestrictedAlignment(self, horizontalSeq, verticalSeq, align_length):
@@ -224,8 +201,8 @@ class GeneSequencing:
                         score, alignment1, alignment2 = self.unrestrictedAlignment(
                             sequences[i], sequences[j], align_length)
                     # if i == 2 and j == 9:
-                        # print("3", alignment1[:100])
-                        # print("10", alignment2[:100])
+                    #     print("3", alignment1[:100])
+                    #     print("10", alignment2[:100])
                     # alignment1 = 'abc-easy  DEBUG:(seq{}, {} chars,align_len={}{})'.format(i+1,
                     #                                                                        len(sequences[i]), align_length, ',BANDED' if banded else '')
                     # alignment2 = 'as-123--  DEBUG:(seq{}, {} chars,align_len={}{})'.format(j+1,
