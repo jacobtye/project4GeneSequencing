@@ -19,6 +19,13 @@ class GeneSequencing:
 
     def __init__(self):
         pass
+    '''
+        Checks the boundaries and returns True or False
+        Time:
+            O(1) just 3 steps max
+        Space:
+            O(1) doesn't store anything
+    '''
 
     def checkBoundaries(self, i, j, rows, cols):
         if i < 0 or j < 0:
@@ -27,6 +34,13 @@ class GeneSequencing:
             return False
         else:
             return True
+    '''
+        Find min and returns string of that is the min
+        Time:
+            O(1) just 3 steps max
+        Space:
+            O(1) doesn't store anything
+    '''
 
     def findMin(self, leftCost, aboveCost, diagonalCost):
         if diagonalCost <= leftCost and diagonalCost <= aboveCost:
@@ -35,12 +49,29 @@ class GeneSequencing:
             return "above"
         elif leftCost <= diagonalCost and leftCost <= aboveCost:
             return "left"
+    '''
+        Generates the Alignment String
+        Time:
+            O(n) as the max legnth of the alignment which would be the max repeats.
+            This would be because the legnth is bound by the legnth of the smaller string 
+            + some indels which are restricted by the banding algorithm so it would be 
+            O(n + i) (i is number of indels) i << n  --> O(n)
+            align_legnth is normally less than the legnths so it can be simplified to 
+            O(a) where a is the align_length in most cases
+        Space:
+            O(n) as the max legnth of the alignment.
+            This would be because the legnth is bound by the legnth of the smaller string 
+            + some indels which are restricted by the banding algorithm so it would be 
+            O(n + i) (i is number of indels) i << n  --> O(n)
+            align_legnth is normally less than the legnths so it can be simplified to 
+            O(a) where a is the align_length in most cases
+    '''
 
     def generateBandedAlignment(self, horizontalSeq, verticalSeq, fromArray, align_length):
         horizontalAlignment = []
         verticalAlignment = []
         v = len(fromArray) - 1
-        h = len(fromArray[0]) - MAXINDELS - 1
+        h = len(fromArray[0]) - MAXINDELS - 1  # 7 in our case
         while fromArray[v][h] != "START":
             adjustH = v + h - MAXINDELS
             if fromArray[v][h] == "LEFT":
@@ -60,6 +91,19 @@ class GeneSequencing:
                 print(fromArray[v][h])
                 raise ValueError("UNKNOWN VALUE")
         return "".join(horizontalAlignment[::-1]), "".join(verticalAlignment[::-1])
+    '''
+        Generates the Alignment String
+        Time:
+            O(n + m) as the max legnth of the alignment which would be the max repeats.
+            This would be the case if it were all indels the length of one string and 
+            then the entire other string and vice versa. Because align_length is normally 
+            less than the legnths the O(a) where a is the align_length in most cases
+        Space:
+            O(n + m) as the max legnth of the alignment.
+            This would be the case if it were all indels the length of one string and 
+            then the entire other string and vice versa. Because align_length is normally 
+            less than the legnths the O(a) where a is the align_length in most cases
+    '''
 
     def generateAlignment(self, horizontalSeq, verticalSeq, fromArray, align_length):
         horizontalAlignment = []
@@ -84,14 +128,31 @@ class GeneSequencing:
                 print(fromArray[v][h])
                 raise ValueError("UNKNOWN VALUE")
         return "".join(horizontalAlignment[::-1]), "".join(verticalAlignment[::-1])
+    '''
+        Generates the Alignment String
+        k is the bandwidth and n is the length of the smaller string
+        nested for loop dominates so the other function calls and the generateAlignment 
+        does not make an impact on big Oh
+        Time:
+            O(kn) it will repeat at max k times as the cols are set to be 2*MAXINDELS + 1 * 
+            n which is how many rows there are.
+            In most cases the align_length < the length of the strings so in most cases it 
+            would be O(ka) where a is the align_length
+        Space:
+            O(kn) the two arrays used for storage are cols = k and rows = n 
+            and so the storage needed is 2*k*n (2 arrays)
+            In most cases the align_length < the length of the strings so in most cases it 
+            would be O(ka) where a is the align_length
+    '''
 
     def bandedAlignment(self, horizontalSeq, verticalSeq, align_length):
         maxJ = min(align_length, len(horizontalSeq))
         cols = min((align_length + 1), len(horizontalSeq) + 1)
+        # n is legnth of smaller string which is always the 2nd argument
         rows = min((align_length + 1), len(verticalSeq) + 1)
         if cols - rows > MAXINDELS:
             return float('inf'), "No Alignment Possible", "No Alignment Possible"
-        cols = 2*MAXINDELS + 1
+        cols = 2*MAXINDELS + 1  # 2*MAXINDELS + 1 == k
         cost = [[float('inf')]*(cols) for _ in range(rows)]
         fromArray = [["NONE"]*(cols) for _ in range(rows)]
         cost[0][MAXINDELS] = 0
@@ -130,10 +191,24 @@ class GeneSequencing:
         alignment1, alignment2 = self.generateBandedAlignment(
             horizontalSeq, verticalSeq, fromArray, align_length)
         return cost[rows-1][cols - MAXINDELS - 1], alignment1, alignment2
+    '''
+        Generates the Alignment String
+        n and m are the lengths of the strings
+        Time:
+            O(nm) it will repeat at max n*m times as there are m cols and n rows max
+            the cols and rows are the min of lengths of the strings and align_length
+            In most cases the align_length < the length of the strings so in most cases it 
+            would be O(a^2) where a is the align_length
+        Space:
+            O(nm) the two arrays used for storage are cols = m and rows = n 
+            and so the storage needed is 2*m*n (2 arrays)
+            In most cases the align_length < the length of the strings so in most cases it 
+            would be O(a^2) where a is the align_length
+    '''
 
     def unrestrictedAlignment(self, horizontalSeq, verticalSeq, align_length):
-        cols = min((align_length + 1), len(horizontalSeq) + 1)
-        rows = min((align_length + 1), len(verticalSeq) + 1)
+        cols = min((align_length + 1), len(horizontalSeq) + 1)  # m
+        rows = min((align_length + 1), len(verticalSeq) + 1)  # n
         cost = [[float('inf')]*cols for _ in range(rows)]
         fromArray = [["NONE"]*cols for _ in range(rows)]
         cost[0][0] = 0
@@ -171,6 +246,18 @@ class GeneSequencing:
 # handle to the GUI so it can be updated as you find results, _banded_ is h boolean that tells
 # you whether you should compute h banded alignment or full alignment, and _align_length_ tells you
 # how many base pairs to use in computing the alignment
+    '''
+        calls either bandedAlignment or unrestrictedAlignment
+        k is bandwidth
+        n and m are lengths of the strings
+        a is align_length
+        time and space:
+            if banded:
+                O(kn) --> avg large n's O(ka)
+            else:
+                O(nm) --> avg large n and m O(a^2)
+        see other functions for explanation
+    '''
 
     def align(self, sequences, table, banded, align_length):
         self.banded = banded
